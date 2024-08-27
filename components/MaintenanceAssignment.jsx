@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Alert, Pressable } from 'react-native';
-import { Picker } from '@react-native-picker/picker'; // Updated import
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { getDocs, collection } from 'firebase/firestore';
+import { Picker } from '@react-native-picker/picker';
+import { getFirestore, doc, onSnapshot, updateDoc, collection, query, where } from 'firebase/firestore';
 
 const MaintenanceAssignment = ({ route, navigation }) => {
   const { requestId } = route.params; // Get the report ID from route parameters
@@ -12,53 +11,70 @@ const MaintenanceAssignment = ({ route, navigation }) => {
   const db = getFirestore();
 
   // Fetch maintenance persons from Firestore
-  const fetchMaintenancePersons = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, 'maintenancePersons'));
+  const fetchMaintenancePersons = () => {
+    const q = query(collection(db, 'maintenancePersons'));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const persons = [];
       querySnapshot.forEach((doc) => {
         const personData = doc.data();
         persons.push({ id: doc.id, name: personData.name });
       });
       setMaintenancePersons(persons);
-    } catch (error) {
+    }, (error) => {
       console.error('Error fetching maintenance persons: ', error);
-    }
+    });
+
+    // Clean up subscription on unmount
+    return () => unsubscribe();
   };
 
   // Fetch report details
-  const fetchReport = async () => {
-    try {
-      const reportRef = doc(db, 'reports', requestId);
-      const reportDoc = await getDoc(reportRef);
-      if (reportDoc.exists()) {
-        const reportData = reportDoc.data();
+  const fetchReport = () => {
+    const reportRef = doc(db, 'reports', requestId);
+    const unsubscribe = onSnapshot(reportRef, (doc) => {
+      if (doc.exists()) {
+        const reportData = doc.data();
         setReport(reportData);
         setSelectedPerson(reportData.assignedTo || ''); // Set the selected person if assigned
       } else {
         console.log('No such document!');
       }
-    } catch (error) {
+    }, (error) => {
       console.error('Error fetching report: ', error);
-    }
+    });
+
+    // Clean up subscription on unmount
+    return () => unsubscribe();
   };
 
-  // Update the report assignment
+  // Update the report assignment and status
   const assignMaintenancePerson = async () => {
     try {
       const reportRef = doc(db, 'reports', requestId);
-      await updateDoc(reportRef, { assignedTo: selectedPerson });
-      Alert.alert('Success', 'Maintenance person assigned successfully');
+      await updateDoc(reportRef, { 
+        assignedTo: selectedPerson,
+        status: 'in progress' // Update status to "in progress"
+      });
+      Alert.alert('Success', 'Maintenance person assigned and status updated to "in progress"');
       navigation.goBack();
     } catch (error) {
       console.error('Error assigning maintenance person: ', error);
       Alert.alert('Error', 'Failed to assign maintenance person.');
     }
+
+    setSelectedPerson('');
   };
 
   useEffect(() => {
-    fetchMaintenancePersons();
-    fetchReport();
+    // Start listening to Firestore
+    const unsubscribePersons = fetchMaintenancePersons();
+    const unsubscribeReport = fetchReport();
+
+    // Clean up subscriptions on unmount
+    return () => {
+      if (unsubscribePersons) unsubscribePersons();
+      if (unsubscribeReport) unsubscribeReport();
+    };
   }, []);
 
   return (

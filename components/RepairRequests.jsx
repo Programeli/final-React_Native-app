@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, onSnapshot } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 
 const RepairRequests = () => {
@@ -9,10 +9,9 @@ const RepairRequests = () => {
   const navigation = useNavigation();
   const db = getFirestore();
 
-  // Fetch repair requests from Firestore
-  const fetchRequests = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, 'reports')); // Assuming 'reports' collection holds the repair requests
+  // Fetch repair requests from Firestore with real-time updates
+  const fetchRequests = () => {
+    const unsubscribe = onSnapshot(collection(db, 'reports'), (querySnapshot) => {
       const fetchedRequests = [];
       querySnapshot.forEach((doc) => {
         fetchedRequests.push({ ...doc.data(), id: doc.id });
@@ -21,13 +20,22 @@ const RepairRequests = () => {
       fetchedRequests.sort((a, b) => a.createdAt.seconds - b.createdAt.seconds);
       setRequests(fetchedRequests);
       setLoading(false);
-    } catch (error) {
+    }, (error) => {
       console.error('Error fetching requests: ', error);
-    }
+      setLoading(false);
+    });
+
+    // Clean up subscription on unmount
+    return () => unsubscribe();
   };
 
   useEffect(() => {
-    fetchRequests();
+    const unsubscribe = fetchRequests();
+
+    // Clean up subscription on unmount
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   // Render each request as a card

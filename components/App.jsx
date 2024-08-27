@@ -14,7 +14,8 @@ const App = () => {
     
       <SafeAreaView style={styles.container}>
         
-        <BottomTabNavigator />
+        {isTablet ? <DrawerNavigator /> : <BottomTabNavigator />}
+
       </SafeAreaView>
     
   );

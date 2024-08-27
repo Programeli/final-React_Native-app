@@ -8,20 +8,16 @@ import RepairRequests from './RepairRequests';
 import MaintenanceAssignment from './MaintenanceAssignment';
 import ReportDetails from './ReportDetails';
 import ImageModal from './ImageModal';
-
-import { useTab } from './TabContext'; // Import context
+import CustomDrawerButton from './CustomDrawerButton'; // Import the custom drawer button
 
 const Drawer = createDrawerNavigator();
 
 const DrawerNavigator = () => {
-  const { activeTab } = useTab();
-
   return (
     <Drawer.Navigator
       drawerContent={(props) => (
         <CustomDrawerButton
           {...props}
-          title="Drawer"
         />
       )}
     >
@@ -52,8 +48,6 @@ const DrawerNavigator = () => {
           ),
         }}
       />
-
-      {/* Add hidden screens as a nested stack */}
       <Drawer.Screen 
         name="MaintenanceAssignment" 
         component={MaintenanceAssignment}

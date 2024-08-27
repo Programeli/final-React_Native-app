@@ -10,17 +10,33 @@ const ReportDetails = ({ route, navigation }) => {
   const [status, setStatus] = useState('');
   const [imageUri, setImageUri] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
+  const [assignedToName, setAssignedToName] = useState(''); // State for maintenance person's name
   const db = getFirestore();
 
   useEffect(() => {
     const fetchReport = async () => {
       try {
+        // Fetch report details
         const reportRef = doc(db, 'reports', reportId);
         const reportDoc = await getDoc(reportRef);
         if (reportDoc.exists()) {
-          setReport(reportDoc.data());
-          setStatus(reportDoc.data().status);
-          setImageUri(reportDoc.data().imageUrl);
+          const reportData = reportDoc.data();
+          setReport(reportData);
+          setStatus(reportData.status);
+          setImageUri(reportData.imageUrl);
+
+          // Fetch maintenance person's details if assigned
+          if (reportData.assignedTo) {
+            const maintenancePersonRef = doc(db, 'maintenancePersons', reportData.assignedTo);
+            const maintenancePersonDoc = await getDoc(maintenancePersonRef);
+            if (maintenancePersonDoc.exists()) {
+              setAssignedToName(maintenancePersonDoc.data().name || 'Unknown');
+            } else {
+              setAssignedToName('Unknown'); // If the maintenance person is not found
+            }
+          }
+        } else {
+          console.log('No such document!');
         }
       } catch (error) {
         console.error('Error fetching report:', error);
@@ -73,10 +89,9 @@ const ReportDetails = ({ route, navigation }) => {
 
   return (
     <ScrollView style={styles.container}>
-        
       <Text style={styles.header}>פרטי בקשה</Text>
-      <Text style={styles.label}>מזהה תקלה: {report.id}</Text>
-      <Text style={styles.label}>איש תחזוקה: {report.assignedTo || 'Unassigned'}</Text>
+      <Text style={styles.label}>מזהה תקלה: {reportId}</Text>
+      <Text style={styles.label}>איש תחזוקה: {assignedToName || 'Unassigned'}</Text>
       <Text style={styles.label}>סטטוס: {status}</Text>
 
       <View style={styles.divider}>
@@ -183,6 +198,10 @@ const styles = StyleSheet.create({
   label2: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  label: {
+    fontSize: 16,
+    marginVertical: 5,
   },
 });
 
