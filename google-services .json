@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1085087768696",
+    "project_id": "final-app-153cf",
+    "storage_bucket": "final-app-153cf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1085087768696:android:05124510e6ad58a702cd8d",
+        "android_client_info": {
+          "package_name": "com.eliastuma.finalapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBN7BhVg2dyXVGd3q508McIMXelzCJB6pc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
